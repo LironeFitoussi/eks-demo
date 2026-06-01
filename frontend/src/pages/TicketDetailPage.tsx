@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import StatusBadge from '../components/StatusBadge';
 import PriorityBadge from '../components/PriorityBadge';
 import api from '../api/axios';
-import { Ticket, Comment, TicketStatus, User, UserRole } from '../types';
+import { TicketStatus, UserRole } from '../types';
+import type { Ticket, Comment, User } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function TicketDetailPage() {
@@ -17,7 +18,7 @@ export default function TicketDetailPage() {
   const [newComment, setNewComment] = useState('');
   const [commentLoading, setCommentLoading] = useState(false);
   const [agents, setAgents] = useState<User[]>([]);
-  const [statusUpdate, setStatusUpdate] = useState<TicketStatus | ''>('');
+  const [statusUpdate, setStatusUpdate] = useState<string>('');
   const [assignUpdate, setAssignUpdate] = useState('');
   const [updateMsg, setUpdateMsg] = useState('');
 
@@ -151,7 +152,7 @@ export default function TicketDetailPage() {
                       <label className="block text-xs text-gray-500 mb-1">Status</label>
                       <select
                         value={statusUpdate}
-                        onChange={(e) => setStatusUpdate(e.target.value as TicketStatus)}
+                        onChange={(e) => setStatusUpdate(e.target.value)}
                         className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         {Object.values(TicketStatus).map((s) => (
@@ -186,7 +187,6 @@ export default function TicketDetailPage() {
               )}
             </div>
 
-            {/* Comments */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">
                 Comments ({ticket.comments.length})

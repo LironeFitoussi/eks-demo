@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import StatusBadge from '../components/StatusBadge';
 import PriorityBadge from '../components/PriorityBadge';
 import api from '../api/axios';
-import { Ticket, TicketStatus, TicketPriority } from '../types';
+import { TicketStatus, TicketPriority } from '../types';
+import type { Ticket } from '../types';
 
 export default function TicketListPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -21,6 +22,7 @@ export default function TicketListPage() {
     if (filterPriority) params.priority = filterPriority;
     if (filterDepartment) params.department = filterDepartment;
 
+    setLoading(true);
     api.get<Ticket[]>('/tickets', { params })
       .then((res) => setTickets(res.data))
       .catch(() => setError('Failed to load tickets.'))
@@ -43,7 +45,6 @@ export default function TicketListPage() {
           </button>
         </div>
 
-        {/* Filter bar */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6 flex flex-wrap gap-4">
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Status</label>

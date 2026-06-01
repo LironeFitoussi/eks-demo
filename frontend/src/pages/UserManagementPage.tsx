@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
 import api from '../api/axios';
-import { User, UserRole } from '../types';
+import { UserRole } from '../types';
+import type { User } from '../types';
 
 interface UserModalProps {
   onClose: () => void;
@@ -12,7 +13,7 @@ interface UserModalProps {
 function UserModal({ onClose, onSave, editUser }: UserModalProps) {
   const [name, setName] = useState(editUser?.name || '');
   const [email, setEmail] = useState(editUser?.email || '');
-  const [role, setRole] = useState<UserRole>(editUser?.role || UserRole.USER);
+  const [role, setRole] = useState<string>(editUser?.role || UserRole.USER);
   const [department, setDepartment] = useState(editUser?.department || '');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -58,7 +59,7 @@ function UserModal({ onClose, onSave, editUser }: UserModalProps) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-              <select value={role} onChange={(e) => setRole(e.target.value as UserRole)}
+              <select value={role} onChange={(e) => setRole(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 {Object.values(UserRole).map((r) => (
                   <option key={r} value={r}>{r}</option>
@@ -102,14 +103,12 @@ export default function UserManagementPage() {
   const [showModal, setShowModal] = useState(false);
   const [editUser, setEditUser] = useState<User | null>(null);
 
-  const loadUsers = () => {
+  useEffect(() => {
     api.get<User[]>('/users')
       .then((res) => setUsers(res.data))
       .catch(() => setError('Failed to load users.'))
       .finally(() => setLoading(false));
-  };
-
-  useEffect(() => { loadUsers(); }, []);
+  }, []);
 
   const handleSave = (saved: User) => {
     setUsers((prev) => {
@@ -134,10 +133,10 @@ export default function UserManagementPage() {
     }
   };
 
-  const roleColors: Record<UserRole, string> = {
-    [UserRole.ADMIN]: 'bg-purple-100 text-purple-700',
-    [UserRole.AGENT]: 'bg-blue-100 text-blue-700',
-    [UserRole.USER]: 'bg-gray-100 text-gray-700',
+  const roleColors: Record<string, string> = {
+    admin: 'bg-purple-100 text-purple-700',
+    agent: 'bg-blue-100 text-blue-700',
+    user: 'bg-gray-100 text-gray-700',
   };
 
   return (
@@ -175,7 +174,7 @@ export default function UserManagementPage() {
                     <td className="px-4 py-3 text-sm font-medium text-gray-900">{u.name}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{u.email}</td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${roleColors[u.role]}`}>
+                      <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${roleColors[u.role] ?? 'bg-gray-100 text-gray-700'}`}>
                         {u.role}
                       </span>
                     </td>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import api from '../api/axios';
@@ -8,7 +8,7 @@ export default function CreateTicketPage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [department, setDepartment] = useState('');
-  const [priority, setPriority] = useState<TicketPriority>(TicketPriority.MEDIUM);
+  const [priority, setPriority] = useState<string>(TicketPriority.MEDIUM);
   const [attachment, setAttachment] = useState<File | null>(null);
   const [departments, setDepartments] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -22,9 +22,7 @@ export default function CreateTicketPage() {
         setDepartments(names);
         if (names.length > 0) setDepartment(names[0]);
       })
-      .catch(() => {
-        // fallback to empty; user can type
-      });
+      .catch(() => {});
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -110,11 +108,11 @@ export default function CreateTicketPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
               <select
                 value={priority}
-                onChange={(e) => setPriority(e.target.value as TicketPriority)}
+                onChange={(e) => setPriority(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                {Object.values(TicketPriority).map((p) => (
-                  <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>
+                {Object.entries(TicketPriority).map(([key, val]) => (
+                  <option key={val} value={val}>{key.charAt(0) + key.slice(1).toLowerCase()}</option>
                 ))}
               </select>
             </div>

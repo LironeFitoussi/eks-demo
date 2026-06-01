@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
 import api from '../api/axios';
-import { DashboardStats } from '../types';
+import type { DashboardStats } from '../types';
 
 interface StatCardProps {
   title: string;
@@ -49,30 +49,10 @@ export default function DashboardPage() {
         )}
         {stats && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatCard
-              title="Open Tickets"
-              value={stats.openTickets}
-              colorClass="bg-blue-600"
-              icon="🎫"
-            />
-            <StatCard
-              title="Closed Tickets"
-              value={stats.closedTickets}
-              colorClass="bg-green-600"
-              icon="✅"
-            />
-            <StatCard
-              title="High Priority"
-              value={stats.highPriorityTickets}
-              colorClass="bg-red-500"
-              icon="🔥"
-            />
-            <StatCard
-              title="Assigned To Me"
-              value={stats.assignedToMe}
-              colorClass="bg-yellow-500"
-              icon="👤"
-            />
+            <StatCard title="Open Tickets" value={stats.openTickets} colorClass="bg-blue-600" icon="🎫" />
+            <StatCard title="Closed Tickets" value={stats.closedTickets} colorClass="bg-green-600" icon="✅" />
+            <StatCard title="High Priority" value={stats.highPriorityTickets} colorClass="bg-red-500" icon="🔥" />
+            <StatCard title="Assigned To Me" value={stats.assignedToMe} colorClass="bg-yellow-500" icon="👤" />
           </div>
         )}
       </main>
