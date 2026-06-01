@@ -1,0 +1,4 @@
+aws_region   = "us-east-1"
+cluster_name = "helpdesk-prod"
+environment  = "prod"
+github_repo  = "LironeFitoussi/eks-demo"

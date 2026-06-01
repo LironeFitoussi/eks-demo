@@ -1,0 +1,95 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
+  CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.set-tag.outputs.image_tag }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set image tag
+        id: set-tag
+        run: |
+          IMAGE_TAG=${{ github.sha }}
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Build and push frontend image
+        run: |
+          docker build -t $ECR_REGISTRY/helpdesk-frontend:$IMAGE_TAG ./frontend
+          docker push $ECR_REGISTRY/helpdesk-frontend:$IMAGE_TAG
+          docker tag $ECR_REGISTRY/helpdesk-frontend:$IMAGE_TAG $ECR_REGISTRY/helpdesk-frontend:latest
+          docker push $ECR_REGISTRY/helpdesk-frontend:latest
+
+      - name: Build and push backend image
+        run: |
+          docker build -t $ECR_REGISTRY/helpdesk-api:$IMAGE_TAG ./backend
+          docker push $ECR_REGISTRY/helpdesk-api:$IMAGE_TAG
+          docker tag $ECR_REGISTRY/helpdesk-api:$IMAGE_TAG $ECR_REGISTRY/helpdesk-api:latest
+          docker push $ECR_REGISTRY/helpdesk-api:latest
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name $CLUSTER_NAME --region $AWS_REGION
+
+      - name: Replace ECR_URL in manifests
+        run: |
+          ECR_URL=${{ env.ECR_REGISTRY }}
+          IMAGE_TAG=${{ needs.build-and-push.outputs.image_tag }}
+          sed -i "s|ECR_URL/helpdesk-frontend:latest|$ECR_URL/helpdesk-frontend:$IMAGE_TAG|g" infra/k8s/frontend-deployment.yaml
+          sed -i "s|ECR_URL/helpdesk-api:latest|$ECR_URL/helpdesk-api:$IMAGE_TAG|g" infra/k8s/backend-deployment.yaml
+
+      - name: Apply Kubernetes manifests
+        run: |
+          kubectl apply -f infra/k8s/namespace.yaml
+          kubectl apply -f infra/k8s/configmap.yaml
+          kubectl apply -f infra/k8s/secret.yaml
+          kubectl apply -f infra/k8s/backend-deployment.yaml
+          kubectl apply -f infra/k8s/backend-service.yaml
+          kubectl apply -f infra/k8s/frontend-deployment.yaml
+          kubectl apply -f infra/k8s/frontend-service.yaml
+          kubectl apply -f infra/k8s/ingress.yaml
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/backend-deployment -n helpdesk-prod --timeout=180s
+          kubectl rollout status deployment/frontend-deployment -n helpdesk-prod --timeout=180s
